@@ -12,8 +12,8 @@ CXXFLAGSextra ?=
 CXX ?= g++
 
 # pre-defined flags
-LDFLAGS_shared := -pthread -Lhtslib -Bstatic -lhts -Bdynamic -lz
-LDFLAGS_static := -static -static-libgcc -pthread -Lhtslib -lhts -lz
+LDFLAGS_shared := -pthread -lhts -Bdynamic -lz
+LDFLAGS_static := -static -static-libgcc -pthread -lhts -lz
 LDFLAGS_Mac :=-pthread -lz htslib/libhts.a
 LDFLAGS_Mac_static :=-pthread -lz -static-libgcc htslib/libhts.a
 LDFLAGS_gdb := $(LDFLAGS_shared)
@@ -45,7 +45,7 @@ CFLAGS ?= -pipe -Wall -Wextra -O3
 CXXFLAGS_SIMD ?= -mavx2
 
 # Unconditionally set essential flags and optimization options
-CXXFLAGS_common := -std=c++11 -fopenmp $(COMPTIMEPLACE) $(GIT_BRANCH_COMMIT_DIFF)
+CXXFLAGS_common := -std=c++11 -fopenmp $(COMPTIMEPLACE) $(CCFLAGS_common_add)
 CXXFLAGS_main := -O3 $(CXXFLAGS_common)
 CXXFLAGS_gdb := -O0 -g3 $(CXXFLAGS_common)
 
@@ -97,10 +97,10 @@ SOURCES := $(wildcard *.cpp) $(wildcard *.c)
 
 
 %.o : %.cpp
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $<
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $(COMPTIMEPLACE) $<
 
 %.o : %.c
-	$(CXX) -c $(CPPFLAGS) $(CFLAGS) $<
+	$(CXX) -c $(CPPFLAGS) $(CFLAGS) $(COMPTIMEPLACE) $<
 
 all: cleanCompileInfo STAR$(SFX)
 
@@ -114,8 +114,6 @@ clean:
 
 .PHONY: CLEAN
 CLEAN: clean
-	$(MAKE) -C htslib clean
-
 
 .PHONY: clean_solo
 clean_solo:
@@ -131,7 +129,7 @@ ifneq ($(MAKECMDGOALS),CLEAN)
 ifneq ($(MAKECMDGOALS),clean_solo)
 ifneq ($(MAKECMDGOALS),STARforMac)
 ifneq ($(MAKECMDGOALS),STARforMacGDB)
-Depend.list: $(SOURCES) parametersDefault.xxd htslib
+Depend.list: $(SOURCES) parametersDefault.xxd
 	echo $(SOURCES)
 	'rm' -f ./Depend.list
 	$(CXX) $(CXXFLAGS_common) -MM $^ >> Depend.list
@@ -142,11 +140,6 @@ endif
 endif
 endif
 endif
-
-htslib : htslib/libhts.a
-
-htslib/libhts.a :
-	$(MAKE) -C htslib lib-static
 
 parametersDefault.xxd: parametersDefault
 	xxd -i parametersDefault > parametersDefault.xxd
